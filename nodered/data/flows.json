@@ -1,0 +1,165 @@
+[
+    {
+        "id": "d7dab27f55a5d58b",
+        "type": "tab",
+        "label": "Fluxo 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "b5c44f3e0eefb409",
+        "type": "mqtt-broker",
+        "name": "Broker",
+        "broker": "mosquitto",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "7b462fca6d72e984",
+        "type": "mongodb4-client",
+        "name": "ConectionMongoDB",
+        "protocol": "mongodb",
+        "hostname": "mongo",
+        "port": "27017",
+        "dbName": "iot-project",
+        "appName": "",
+        "authSource": "",
+        "authMechanism": "DEFAULT",
+        "tls": false,
+        "tlsCAFile": "",
+        "tlsCertificateKeyFile": "",
+        "tlsInsecure": false,
+        "connectTimeoutMS": "30000",
+        "socketTimeoutMS": "0",
+        "minPoolSize": "0",
+        "maxPoolSize": "100",
+        "maxIdleTimeMS": "0",
+        "uri": "",
+        "advanced": "{}",
+        "uriTabActive": "tab-uri-simple"
+    },
+    {
+        "id": "6b421670c603882b",
+        "type": "mqtt in",
+        "z": "d7dab27f55a5d58b",
+        "name": "",
+        "topic": "#",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "b5c44f3e0eefb409",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 110,
+        "y": 120,
+        "wires": [
+            [
+                "b8e294567e0a7dde"
+            ]
+        ]
+    },
+    {
+        "id": "b8e294567e0a7dde",
+        "type": "debug",
+        "z": "d7dab27f55a5d58b",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 340,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "e12742727069c6fe",
+        "type": "inject",
+        "z": "d7dab27f55a5d58b",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"teste\":\"ok\"}",
+        "payloadType": "json",
+        "x": 90,
+        "y": 200,
+        "wires": [
+            [
+                "3c437740c434dd0a"
+            ]
+        ]
+    },
+    {
+        "id": "1c46853a7c73fa6a",
+        "type": "mongodb4",
+        "z": "d7dab27f55a5d58b",
+        "clientNode": "7b462fca6d72e984",
+        "mode": "collection",
+        "collection": "testes",
+        "operation": "insertOne",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "",
+        "x": 440,
+        "y": 200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "3c437740c434dd0a",
+        "type": "uuid",
+        "z": "d7dab27f55a5d58b",
+        "uuidVersion": "v4",
+        "namespaceType": "",
+        "namespace": "",
+        "namespaceCustom": "",
+        "name": "",
+        "field": "payload._id",
+        "fieldType": "msg",
+        "x": 270,
+        "y": 200,
+        "wires": [
+            [
+                "1c46853a7c73fa6a"
+            ]
+        ]
+    }
+]
