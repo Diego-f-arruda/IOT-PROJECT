@@ -8,6 +8,14 @@
         "env": []
     },
     {
+        "id": "137c847c0940eaf0",
+        "type": "tab",
+        "label": "IOT - HTTP",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "b5c44f3e0eefb409",
         "type": "mqtt-broker",
         "name": "Broker",
@@ -132,7 +140,7 @@
         "maxTimeMS": "0",
         "handleDocId": false,
         "name": "Device",
-        "x": 830,
+        "x": 1310,
         "y": 120,
         "wires": [
             []
@@ -171,7 +179,7 @@
         "rh": 0,
         "inputs": 0,
         "x": 130,
-        "y": 240,
+        "y": 200,
         "wires": [
             [
                 "8217d61f3b18c5b0"
@@ -191,7 +199,7 @@
         "finalize": "",
         "libs": [],
         "x": 520,
-        "y": 240,
+        "y": 200,
         "wires": [
             [
                 "e54a84efec4a1c08"
@@ -210,7 +218,7 @@
         "field": "payload._id",
         "fieldType": "msg",
         "x": 310,
-        "y": 240,
+        "y": 200,
         "wires": [
             [
                 "bc1b3314b135b9e7"
@@ -231,11 +239,196 @@
         "rh": 0,
         "inputs": 0,
         "x": 140,
-        "y": 340,
+        "y": 280,
         "wires": [
             [
-                "b8e294567e0a7dde"
+                "87cf79b1b41fddf8"
             ]
         ]
+    },
+    {
+        "id": "87cf79b1b41fddf8",
+        "type": "uuid",
+        "z": "d7dab27f55a5d58b",
+        "uuidVersion": "v4",
+        "namespaceType": "",
+        "namespace": "",
+        "namespaceCustom": "",
+        "name": "",
+        "field": "payload._id",
+        "fieldType": "msg",
+        "x": 310,
+        "y": 280,
+        "wires": [
+            [
+                "17a2ed8c651d58d9"
+            ]
+        ]
+    },
+    {
+        "id": "17a2ed8c651d58d9",
+        "type": "function",
+        "z": "d7dab27f55a5d58b",
+        "name": "Parse Telemetry => WS",
+        "func": "let data = {}\ntry {\n    data = (typeof msg.payload === 'string') ? JSON.parse(msg.payload) : msg.payload;\n} catch {\n    return null;\n}\n\nconst device_id = (msg.topic || '').split(\"/\")[1];\nif (!device_id) return null;\n\nconst obj = {\n    _id: msg.payload._id,\n    device_id,\n    sensor: msg.payload.sensor || 'unknown',\n    unit: msg.payload.unit || null,\n    value: msg.payload.value || null,\n    created_at: new Date(msg.payload.ts || Date.now()),\n    source: 'telemetry'\n}\n\nconst reading = {\n    collection: 'readings',\n    operation: 'insertOne',\n    payload: obj\n}\n\nconst devices = {\n    collection: 'devices',\n    operation: 'updateOne',\n    payload: [\n        { device_id },\n        {\n            $set: { 'status.last_seen': new Date(), updated_at: new Date() },\n            $setOnInsert: { created_at: new Date(), device_id, _id: msg.payload._id }\n        },\n        { upsert: true }\n    ]\n}\n\nreturn [devices, reading];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 530,
+        "y": 280,
+        "wires": [
+            [
+                "e54a84efec4a1c08"
+            ],
+            [
+                "f167982de9680657"
+            ]
+        ]
+    },
+    {
+        "id": "f167982de9680657",
+        "type": "mongodb4",
+        "z": "d7dab27f55a5d58b",
+        "clientNode": "7b462fca6d72e984",
+        "mode": "collection",
+        "collection": "",
+        "operation": "",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "Readings",
+        "x": 1320,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "3adc02563c95714e",
+        "type": "mqtt in",
+        "z": "d7dab27f55a5d58b",
+        "name": "Device ACK",
+        "topic": "device/+/ack",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "b5c44f3e0eefb409",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 130,
+        "y": 360,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e7a62466a01f5057",
+        "type": "http in",
+        "z": "137c847c0940eaf0",
+        "name": "GET Devices",
+        "url": "/api/devices",
+        "method": "get",
+        "upload": false,
+        "skipBodyParsing": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 60,
+        "wires": [
+            [
+                "978a17884652ce1a"
+            ]
+        ]
+    },
+    {
+        "id": "978a17884652ce1a",
+        "type": "function",
+        "z": "137c847c0940eaf0",
+        "name": "Find All Devices",
+        "func": "msg.collection = \"devices\";\nmsg.operation = \"find\";\nmsg.payload = [{}, { sort: { 'status.online': -1, device_id: 1 }}]\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 60,
+        "wires": [
+            [
+                "790adc744624909e"
+            ]
+        ]
+    },
+    {
+        "id": "790adc744624909e",
+        "type": "mongodb4",
+        "z": "137c847c0940eaf0",
+        "clientNode": "7b462fca6d72e984",
+        "mode": "collection",
+        "collection": "",
+        "operation": "",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "Devices",
+        "x": 660,
+        "y": 60,
+        "wires": [
+            [
+                "3d4c5d98674bc01e"
+            ]
+        ]
+    },
+    {
+        "id": "3d4c5d98674bc01e",
+        "type": "http response",
+        "z": "137c847c0940eaf0",
+        "name": "REPLY",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 920,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "7ad7267de626dc95",
+        "type": "http in",
+        "z": "137c847c0940eaf0",
+        "name": "POST Command",
+        "url": "/api/devices/:id/cmd",
+        "method": "post",
+        "upload": false,
+        "skipBodyParsing": false,
+        "swaggerDoc": "",
+        "x": 180,
+        "y": 140,
+        "wires": [
+            [
+                "a1ee4b1e37242ed0"
+            ]
+        ]
+    },
+    {
+        "id": "a1ee4b1e37242ed0",
+        "type": "debug",
+        "z": "137c847c0940eaf0",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1320,
+        "y": 780,
+        "wires": []
     }
 ]
