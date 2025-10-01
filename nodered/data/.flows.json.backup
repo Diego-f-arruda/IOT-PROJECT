@@ -322,6 +322,51 @@
         "x": 130,
         "y": 360,
         "wires": [
+            [
+                "474d2ef3fde1bca6"
+            ]
+        ]
+    },
+    {
+        "id": "474d2ef3fde1bca6",
+        "type": "function",
+        "z": "d7dab27f55a5d58b",
+        "name": "Parse ACK => Device State",
+        "func": "const deviceId = msg.topic.split(\"/\")[1];\nif (!deviceId) return null;\nconst state = (msg.payload.state) ? { state: msg.payload.state } : { angle: +msg.payload.angle }\nconst msgCmd = {\n    collection: 'commands',\n    operation: \"updateOne\",\n    payload: [\n        { corr: msg.payload.corr },\n        {\n            $set: {\n                ack: {\n                    ts: new Date(),\n                    ok: msg.payload.ok,\n                    state_echo: state\n                },\n                status: msg.payload.ok ? 'executed' : 'failed',\n                error: msg.payload.ok ? 'ack not ok' : null\n            }\n        }\n    ]\n}\n\n\nreturn [null, msgCmd, null];",
+        "outputs": 3,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 540,
+        "y": 360,
+        "wires": [
+            [
+                "e54a84efec4a1c08"
+            ],
+            [
+                "270bddd5f1281d17",
+                "b8e294567e0a7dde"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "270bddd5f1281d17",
+        "type": "mongodb4",
+        "z": "d7dab27f55a5d58b",
+        "clientNode": "7b462fca6d72e984",
+        "mode": "collection",
+        "collection": "",
+        "operation": "",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "Commands",
+        "x": 1330,
+        "y": 360,
+        "wires": [
             []
         ]
     },
@@ -407,10 +452,10 @@
         "skipBodyParsing": false,
         "swaggerDoc": "",
         "x": 180,
-        "y": 140,
+        "y": 180,
         "wires": [
             [
-                "a1ee4b1e37242ed0"
+                "a4848d092e66ac62"
             ]
         ]
     },
@@ -423,11 +468,106 @@
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "false",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
         "x": 1320,
         "y": 780,
+        "wires": []
+    },
+    {
+        "id": "a4848d092e66ac62",
+        "type": "uuid",
+        "z": "137c847c0940eaf0",
+        "uuidVersion": "v4",
+        "namespaceType": "",
+        "namespace": "",
+        "namespaceCustom": "",
+        "name": "",
+        "field": "payload._id",
+        "fieldType": "msg",
+        "x": 410,
+        "y": 180,
+        "wires": [
+            [
+                "724ece6846066445"
+            ]
+        ]
+    },
+    {
+        "id": "724ece6846066445",
+        "type": "function",
+        "z": "137c847c0940eaf0",
+        "name": "Create command",
+        "func": "const deviceId = msg.req.params.id;\nconst command = msg.req.body;\n\nconst value = (typeof command.on === 'boolean') ? { on: command.on } : { angle: +command.angle };\n\nconst commandDb = {\n    _id: msg.payload._id,\n    device_id: deviceId,\n    target: command.target,\n    payload: value,\n    corr: command.corr,\n    request_by: 'dashboard',\n    request_at: new Date(),\n    ack: null,\n    status: 'sent',\n    delivery: {\n        sent_ts: new Date()\n    },\n    error: null\n}\nconst msgInsert = {\n    collection: \"commands\",\n    operation: \"insertOne\",\n    payload: [commandDb]\n}\n\nconst httpResponse = {\n    ...msg,\n    statusCode: 200,\n    payload: {\n        ok: true,\n        corr: commandDb.corr\n    }\n}\n\nconst publishMqtt = {\n    topic: `device/${deviceId}/cmd`,\n    payload: {\n        target: command.target,\n        ...value,\n        corr: command.corr\n    },\n    qos: 1,\n    retain: false\n}\nreturn [msgInsert, httpResponse, publishMqtt];\n",
+        "outputs": 3,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 630,
+        "y": 180,
+        "wires": [
+            [
+                "ad28cdb7678350bc"
+            ],
+            [
+                "a99388e72fec3b69"
+            ],
+            [
+                "a782233a70160de2"
+            ]
+        ]
+    },
+    {
+        "id": "a99388e72fec3b69",
+        "type": "http response",
+        "z": "137c847c0940eaf0",
+        "name": "REPLY",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 920,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "ad28cdb7678350bc",
+        "type": "mongodb4",
+        "z": "137c847c0940eaf0",
+        "clientNode": "7b462fca6d72e984",
+        "mode": "collection",
+        "collection": "",
+        "operation": "",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "Command",
+        "x": 930,
+        "y": 140,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a782233a70160de2",
+        "type": "mqtt out",
+        "z": "137c847c0940eaf0",
+        "name": "Send Command Device",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "b5c44f3e0eefb409",
+        "x": 970,
+        "y": 220,
         "wires": []
     }
 ]
